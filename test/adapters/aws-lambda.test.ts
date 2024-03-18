@@ -198,19 +198,13 @@ describe('v1', () => {
     expect(headers).toEqual({
       'content-type': 'application/json',
     });
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['name'],
-          received: 'undefined',
-        },
-      ],
-    });
+
+    // mimic the error, use an empty object because of the bad input
+    const mimic = z.object({ name: z.string() }).safeParse({});
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
   });
 
   test('with invalid body', async () => {
@@ -418,19 +412,12 @@ describe('v2', () => {
     expect(headers).toEqual({
       'content-type': 'application/json',
     });
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['name'],
-          received: 'undefined',
-        },
-      ],
-    });
+    // mimic the error, use an empty object because of the bad input
+    const mimic = z.object({ name: z.string() }).safeParse({});
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
   });
 
   test('with invalid body', async () => {

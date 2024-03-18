@@ -1,8 +1,8 @@
 {
-  "name": "trpc-openapi",
-  "version": "1.2.0",
+  "name": "@storycards-labs/trpc-openapi",
+  "version": "1.3.0",
   "description": "tRPC OpenAPI",
-  "author": "James Berry <jb@jamesbe.com>",
+  "repository": "https://github.com/storycards-labs/trpc-openapi.git",
   "private": false,
   "license": "MIT",
   "keywords": [
@@ -10,9 +10,6 @@
     "openapi",
     "swagger"
   ],
-  "homepage": "https://github.com/jlalmes/trpc-openapi",
-  "repository": "github:jlalmes/trpc-openapi",
-  "bugs": "https://github.com/jlalmes/trpc-openapi/issues",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "workspaces": [

@@ -4,6 +4,7 @@ import {
   NodeHTTPRequest,
   NodeHTTPResponse,
 } from '@trpc/server/dist/adapters/node-http';
+import { getErrorShape } from '@trpc/server/shared';
 import cloneDeep from 'lodash.clonedeep';
 import { ZodError, z } from 'zod';
 
@@ -81,7 +82,7 @@ export const createOpenApiNodeHttpHandler = <
 
     let input: any = undefined;
     let ctx: any = undefined;
-    let data: any = undefined;
+    let responseData: any = undefined;
 
     try {
       if (!procedure) {
@@ -131,23 +132,22 @@ export const createOpenApiNodeHttpHandler = <
       const segments = procedure.path.split('.');
       const procedureFn = segments.reduce((acc, curr) => acc[curr], caller as any) as AnyProcedure;
 
-      data = await procedureFn(input);
+      responseData = await procedureFn(input);
 
       const meta = responseMeta?.({
         type: procedure.type,
         paths: [procedure.path],
         ctx,
-        data: [data],
+        data: [responseData],
         errors: [],
       });
 
       const statusCode = meta?.status ?? 200;
       const headers = meta?.headers ?? {};
-      const body: OpenApiSuccessResponse<typeof data> = data;
+      const body: OpenApiSuccessResponse<typeof responseData> = responseData;
       sendResponse(statusCode, headers, body);
     } catch (cause) {
       const error = getErrorFromUnknown(cause);
-
       onError?.({
         error,
         type: procedure?.type ?? 'unknown',
@@ -161,11 +161,11 @@ export const createOpenApiNodeHttpHandler = <
         type: procedure?.type ?? 'unknown',
         paths: procedure?.path ? [procedure?.path] : undefined,
         ctx,
-        data: [data],
+        data: [responseData],
         errors: [error],
       });
 
-      const errorShape = router.getErrorShape({
+      const { data, ...shape } = router.getErrorShape({
         error,
         type: procedure?.type ?? 'unknown',
         path: procedure?.path,
@@ -173,19 +173,13 @@ export const createOpenApiNodeHttpHandler = <
         ctx,
       });
 
-      const isInputValidationError =
-        error.code === 'BAD_REQUEST' &&
-        error.cause instanceof Error &&
-        error.cause.name === 'ZodError';
-
       const statusCode = meta?.status ?? TRPC_ERROR_CODE_HTTP_STATUS[error.code] ?? 500;
       const headers = meta?.headers ?? {};
-      const body: OpenApiErrorResponse = {
-        message: isInputValidationError
-          ? 'Input validation failed'
-          : errorShape?.message ?? error.message ?? 'An error occurred',
+
+      const body = {
+        ...shape,
         code: error.code,
-        issues: isInputValidationError ? (error.cause as ZodError).errors : undefined,
+        message: shape?.message ?? error.message ?? 'An error occurred',
       };
       sendResponse(statusCode, headers, body);
     }

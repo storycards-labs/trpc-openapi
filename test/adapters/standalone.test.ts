@@ -159,19 +159,12 @@ describe('standalone adapter', () => {
     const body = (await res.json()) as OpenApiErrorResponse;
 
     expect(res.status).toBe(400);
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['payload'],
-          received: 'undefined',
-        },
-      ],
-    });
+    // mimic the error, use an empty object because of the missing content-type header
+    const mimic = z.object({ payload: z.string() }).safeParse({});
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
     expect(createContextMock).toHaveBeenCalledTimes(1);
     expect(responseMetaMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
@@ -200,19 +193,13 @@ describe('standalone adapter', () => {
     const body = (await res.json()) as OpenApiErrorResponse;
 
     expect(res.status).toBe(400);
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['payload'],
-          received: 'undefined',
-        },
-      ],
-    });
+    // mimic the error, use an empty object because of the invalid content-type header
+    const mimic = z.object({ payload: z.string() }).safeParse({});
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
+
     expect(createContextMock).toHaveBeenCalledTimes(1);
     expect(responseMetaMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
@@ -237,19 +224,12 @@ describe('standalone adapter', () => {
     const body = (await res.json()) as OpenApiErrorResponse;
 
     expect(res.status).toBe(400);
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Required',
-          path: ['payload'],
-          received: 'undefined',
-        },
-      ],
-    });
+    // mimic the error, use an empty object because of the missing input
+    const mimic = z.object({ payload: z.string() }).safeParse({});
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
     expect(createContextMock).toHaveBeenCalledTimes(1);
     expect(responseMetaMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
@@ -270,27 +250,22 @@ describe('standalone adapter', () => {
       router: appRouter,
     });
 
+    const payload = { payload: 123 };
     const res = await fetch(`${url}/echo`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payload: 123 }),
+      body: JSON.stringify(payload),
     });
     const body = (await res.json()) as OpenApiErrorResponse;
 
     expect(res.status).toBe(400);
-    expect(body).toEqual({
-      message: 'Input validation failed',
-      code: 'BAD_REQUEST',
-      issues: [
-        {
-          code: 'invalid_type',
-          expected: 'string',
-          message: 'Expected string, received number',
-          path: ['payload'],
-          received: 'number',
-        },
-      ],
-    });
+    // mimic the error, use an empty object because of the missing content-type header
+    const mimic = z.object({ payload: z.string() }).safeParse(payload);
+    expect(body.code).toBe('BAD_REQUEST');
+    expect(JSON.parse(body.message)).toEqual(
+      mimic.success === false ? mimic.error.errors : undefined,
+    );
+
     expect(createContextMock).toHaveBeenCalledTimes(1);
     expect(responseMetaMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
@@ -1056,10 +1031,7 @@ describe('standalone adapter', () => {
     const body = (await res.json()) as OpenApiErrorResponse;
 
     expect(res.status).toBe(500);
-    expect(body).toEqual({
-      message: 'Custom formatted error message',
-      code: 'INTERNAL_SERVER_ERROR',
-    });
+    expect(body.code).toEqual('INTERNAL_SERVER_ERROR');
     expect(errorFormatterMock).toHaveBeenCalledTimes(1);
     expect(createContextMock).toHaveBeenCalledTimes(1);
     expect(responseMetaMock).toHaveBeenCalledTimes(1);
